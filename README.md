@@ -17,29 +17,32 @@ Atlassian ITSM migration toolkit. Scripts, templates, and documentation for migr
 
 ```
 docs/
-  migration-outline.md   End-to-end migration guide (Parts 1-8)
-  assessment/            Platform audit templates and gap analysis
-  field-mapping/         Field type reference and mapping guides
-  workflow-mapping/      Status category guide and transition mapping
-  assets-cmdb/           Schema and data migration for Assets/CMDB
-  quirks/                Platform gotchas, JCMA behavior, silent failures
-  ivanti/                Ivanti-specific extraction and mapping
-  runbooks/              Step-by-step migration runbooks
-  wip/                   Plans and drafts in progress
+  migration-outline.md              End-to-end migration guide
+  assessment-template.md            Fill-in-the-blank assessment deliverable
+  field-type-reference.md           Custom field types with DC/Cloud migration notes
+  scriptrunner-parity.md            ScriptRunner DC vs Cloud feature table
+  assets-migration-reference.md     Assets import ordering, schema, Data Manager
+  cutover-runbook.md                Fill-in-the-blank cutover runbook
+  servicenow-migration.md           ServiceNow to JSM guide
+  bmc-remedy-migration.md           BMC Remedy/Helix to JSM guide
+  ivanti-migration.md               Ivanti to JSM guide
+  cherwell-migration.md             Cherwell to JSM guide
+  quirks/                           Platform gotchas and terminology
+  wip/                              Plans and drafts
 tools/
-  lib/                   Shared API client (auth, pagination, rate limiting)
-  extract/               Extraction scripts (API pulls, exports)
-  transform/             Data transformation (field mapping, normalization)
-  validate/              Pre and post migration validation
-  pull-docs.js           Pull vendor docs to markdown for offline reference
+  lib/                              Shared API client (auth, pagination, rate limiting)
+  extract/                          Extraction scripts (API pulls, exports)
+  transform/                        Data transformation (field mapping, normalization)
+  validate/                         Pre and post migration validation
+  pull-docs.js                      Pull vendor docs to markdown for offline reference
 templates/
-  jira-server-migration-checklist.md       DC to DC (CMJ-based)
-  jira-dc-to-cloud-migration-checklist.md  DC to Cloud (JCMA-based)
+  jira-server-migration-checklist.md        DC to DC (CMJ-based)
+  jira-dc-to-cloud-migration-checklist.md   DC to Cloud (JCMA-based)
   jira-cloud-to-cloud-migration-checklist.md  Cloud to Cloud (REST API-based)
-  field-mapping.csv      Field mapping template
-  status-mapping.csv     Status mapping template
-  user-mapping.csv       User mapping template
-src/reference/           Pulled platform docs (gitignored)
+  field-mapping.csv                 Field mapping template
+  status-mapping.csv                Status mapping template
+  user-mapping.csv                  User mapping template
+src/reference/                      Pulled platform docs (gitignored)
 ```
 
 ## Related

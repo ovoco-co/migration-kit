@@ -3,6 +3,5 @@ node_modules/
 *.log
 .DS_Store
 src/reference/
-docs/wip/
 output/
 .migrationrc.json

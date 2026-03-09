@@ -3,7 +3,7 @@
 A practical guide to migrating ITSM platforms to Jira Service Management, organized by what you actually do on an engagement, not by product feature list.
 
 
-## Part 1: Discovery
+## Discovery
 
 You show up on day one. The client has an existing ITSM platform (Jira DC, Ivanti, ServiceNow, BMC, Cherwell, or some combination) and wants to be on JSM Cloud by a target date. Before you touch anything, you need to understand what exists.
 
@@ -51,7 +51,7 @@ Produce a migration assessment document with:
 - Dependencies and sequencing (some projects must migrate before others because of cross-project links or shared schemes)
 
 
-## Part 2: Target Design
+## Target Design
 
 You know what exists. Now design the target environment. This is where the client's wish list meets Jira's reality.
 
@@ -148,7 +148,7 @@ Map source permission schemes to the target. Key decisions:
 - Customer accounts: every customer in the source system needs to exist in the target. Orphaned customers lose access to their request history.
 
 
-## Part 3: Data Migration
+## Data Migration
 
 ### The Migration Pipeline
 
@@ -215,95 +215,19 @@ CMJ is especially useful for phased migrations where you move projects one at a 
 
 ### ServiceNow to JSM
 
-ServiceNow migrations are full rebuilds. The platforms share ITIL vocabulary but have fundamentally different architectures.
-
-**Data model mapping:**
-- ServiceNow Incident table maps to JSM Incident work type
-- ServiceNow Request/RITM maps to JSM request types
-- ServiceNow Problem maps to JSM Problem work type
-- ServiceNow Change Request maps to JSM Change work type
-- ServiceNow Knowledge Base maps to Confluence pages
-- ServiceNow CMDB maps to JSM Assets (significant schema redesign)
-- ServiceNow ITSM workflows map to JSM workflows with automation rules
-
-**Extraction approach:** Use the ServiceNow Table API or export sets to pull data as JSON or CSV. Key tables: incident, sc_request, sc_req_item, problem, change_request, kb_knowledge, cmdb_ci (and subtables). Export sys_choice for field option lists and sys_user for user accounts.
-
-**Common challenges:**
-- ServiceNow's CMDB is class-based with inheritance. JSM Assets uses a flat type hierarchy with references. Every CMDB class needs to be mapped to an Assets object type, and inherited attributes need to be explicitly defined on each type.
-- ServiceNow workflows use conditions, activities, and approvals that have no direct Jira equivalent. Approval workflows need particular attention since JSM's approval mechanism works differently.
-- ServiceNow assignment groups map to Jira project roles or teams, but the permission model is different. ServiceNow ACLs are more granular than Jira permission schemes.
-- ServiceNow update sets and scoped applications have no Jira equivalent. Custom application logic must be rebuilt as Forge apps or automation rules.
-- ServiceNow UI policies and client scripts (dynamic form behavior) have no direct Cloud equivalent. Some can be replicated with Cloud Forms conditional logic; others need Forge apps or process changes.
-- ServiceNow business rules (server-side triggers) map to Automation rules, but complex rules with GlideRecord queries need redesign.
-
-**The typical approach:** Extract data and configuration from ServiceNow. Design the target JSM environment from scratch using the ServiceNow configuration as requirements, not as a template. Build target workflows, fields, SLAs, and automation. Transform exported data to match the target schema. Import via REST API. This is the most labor-intensive migration type - plan for weeks of design and build before any data moves.
+See [servicenow-migration.md](servicenow-migration.md) for data model mapping, extraction approach, common challenges, and quirks.
 
 ### BMC Remedy/Helix to JSM
 
-BMC Remedy is one of the oldest and most deeply customized ITSM platforms in enterprise IT. Migrations from Remedy are among the most complex engagements you will encounter.
-
-**Data model mapping:**
-- Remedy Incident (HPD:Help Desk) maps to JSM Incident issue type
-- Remedy Service Request (SRM:Request) maps to JSM request types
-- Remedy Problem (PBM:Problem Investigation) maps to JSM Problem issue type
-- Remedy Change (CHG:Infrastructure Change) maps to JSM Change issue type
-- Remedy Known Error maps to Confluence knowledge articles
-- Remedy Asset/CMDB (BMC.CORE:BMC_BaseElement) maps to JSM Assets
-- Remedy Work Orders maps to JSM Task issue type
-
-**Common challenges:**
-- Remedy's data model is deeply normalized with hundreds of forms (tables). A single incident touches HPD:Help Desk, HPD:Associations, HPD:WorkLog, HPD:Audit, and more. You must join these into a flat Jira issue structure.
-- Remedy workflows use Active Link Guides, Filters, and Escalations that have no Jira equivalent. Active Links (client-side logic) and Filters (server-side triggers) must be mapped to automation rules or Forge apps.
-- Remedy supports multi-tenancy natively. If the client uses multi-tenancy, each tenant may need a separate JSM project or a tagging strategy.
-- Remedy custom fields use AR System field IDs (integers like 536870913). The field mapping table needs the field ID, display name, and type for every field.
-- Remedy categorization uses a three-tier model (Tier 1, Tier 2, Tier 3) that maps to cascading selects or Assets references on JSM.
-- Remedy CMDB uses a class hierarchy based on the Common Data Model (CDM). Classes inherit attributes from parent classes. JSM Assets does not support inheritance, so inherited attributes must be explicitly defined on each object type.
-- Attachment extraction requires AR System API calls per record. Large Remedy instances with millions of records and extensive attachment histories need batched extraction with checkpoint/resume capability.
-
-**Extraction approach:** Use the BMC REST API (available on Helix) or the AR System API (legacy Remedy). For large datasets, database-level extraction may be faster but requires DBA access and knowledge of the Remedy schema. Export to JSON with work logs, associations, and attachments as nested objects.
+See [bmc-remedy-migration.md](bmc-remedy-migration.md) for data model mapping, extraction approach, common challenges, and quirks.
 
 ### Cherwell to JSM
 
-Cherwell was acquired by Ivanti in 2021, and Ivanti is sunsetting it. Cherwell customers are being pushed to move, making this a high-demand migration corridor.
-
-**Data model mapping:**
-- Cherwell Incident maps to JSM Incident issue type
-- Cherwell Service Request maps to JSM request types
-- Cherwell Problem maps to JSM Problem issue type
-- Cherwell Change Request maps to JSM Change issue type
-- Cherwell Knowledge Article maps to Confluence pages
-- Cherwell CMDB maps to JSM Assets
-- Cherwell Task maps to JSM Task issue type
-
-**Common challenges:**
-- Cherwell uses a "One-Step" automation engine with visual action chains. These must be decomposed into individual Jira automation rules.
-- Cherwell Forms are highly customized with tabs, grids, and embedded related items. JSM request forms are simpler. Complex Cherwell forms need to be simplified or split across multiple request types.
-- Cherwell uses "Business Object" as its record type abstraction. Each Business Object has its own field set, relationships, and lifecycle. Mapping these to Jira issue types requires understanding which Business Objects are true ticket types vs reference data (which belongs in Assets).
-- Cherwell's API is REST-based but uses its own query syntax. Extraction scripts need Cherwell-specific query logic.
-- Cherwell supports Customer-facing portals with shopping cart style service catalogs. JSM's portal model is different, so the service catalog structure needs redesign.
-- Cherwell CMDB uses a relational model with Configuration Item types. The schema maps more cleanly to JSM Assets than Remedy's CDM, but relationship types still need explicit mapping.
-
-**Timeline pressure:** Since Ivanti is sunsetting Cherwell, these clients often have a hard deadline. Discovery and design phases get compressed. Prioritize: what data must migrate (open tickets, last 12 months of history, CMDB) vs what can be archived (closed tickets older than 2 years).
+See [cherwell-migration.md](cherwell-migration.md) for data model mapping, common challenges, timeline pressure, and quirks.
 
 ### Ivanti (Neurons/ISM) to JSM
 
-Ivanti migrations are rebuilds, not lifts. The data model, workflow engine, and field architecture are fundamentally different. Note: Cherwell migrations are covered separately above since Cherwell has a distinct architecture despite now being under the Ivanti umbrella.
-
-**Data model mapping:**
-- Ivanti Incident maps to JSM Incident issue type
-- Ivanti Service Request maps to JSM request types
-- Ivanti Problem maps to JSM Problem issue type
-- Ivanti Change maps to JSM Change issue type
-- Ivanti Knowledge Article maps to Confluence pages
-- Ivanti CMDB maps to JSM Assets (major schema redesign required)
-
-**Common challenges:**
-- Ivanti's workflow engine supports conditions and actions that have no Jira equivalent. Every workflow is a redesign.
-- Ivanti custom fields use different type names and storage formats. Date fields, multi-value fields, and relationship fields all need transformation logic.
-- Ivanti attachments are stored differently and may need format conversion.
-- User accounts in Ivanti may use a different identity format than Atlassian accounts.
-
-**The typical approach:** Extract Ivanti data to CSV/JSON. Build the target JSM environment from scratch (projects, issue types, request types, workflows, fields, SLAs, automation). Transform the extracted data to match the target field schema. Import via REST API or CSV import. This is weeks of work, not days.
+See [ivanti-migration.md](ivanti-migration.md) for data model mapping, common challenges, typical approach, and quirks.
 
 ### HP Service Manager/SMAX to JSM
 
@@ -473,7 +397,7 @@ Most ITSM migrations include knowledge base content. The source determines the a
 For all sources, test the customer-facing knowledge base on the JSM portal after import. Verify search returns relevant results, articles render correctly, and embedded images display.
 
 
-## Part 4: Configuration Build
+## Configuration Build
 
 While data migration runs in test cycles, build the target configuration.
 
@@ -514,7 +438,7 @@ Build SLA definitions. Test with a sample request: create a request, verify the 
 Build the customer portal. Create request type groups, assign request types, configure which fields appear on each request form. Set portal branding (logo, colors, announcement). Test from a customer account: submit a request, verify it creates a work item with the correct fields populated.
 
 
-## Part 5: Test Cycles
+## Test Cycles
 
 ### The Three-Pass Approach
 
@@ -545,7 +469,7 @@ Build the customer portal. Create request type groups, assign request types, con
 - Cascading select showing all options instead of filtered options because the parent field name in the AQL placeholder does not match exactly.
 
 
-## Part 6: Cutover
+## Cutover
 
 ### Pre-Cutover Checklist
 
@@ -597,13 +521,13 @@ First week: collect feedback from agents and customers. Fix issues as they surfa
 First month: decommission the source system (or set to read-only archive). Transfer ownership of the target configuration to the internal admin team. Deliver the as-built documentation.
 
 
-## Part 7: The Consultant's Toolkit
+## The Consultant's Toolkit
 
 Every migration uses the same set of scripts, templates, and deliverables. The table below maps each tool to where it lives in the repo and when you use it during the engagement.
 
 ### Scripts by Migration Phase
 
-#### Part 1: Discovery (day one)
+#### Discovery (day one)
 
 Run these immediately to scope the work. Their output feeds every decision that follows.
 
@@ -618,7 +542,7 @@ Run these immediately to scope the work. Their output feeds every decision that 
 
 The field inventory and issue counts run first. The workflow and ScriptRunner inventories run next because they depend on knowing which fields and projects matter. The scheme inventory can run in parallel with anything.
 
-#### Part 2: Target Design
+#### Target Design
 
 No scripts. This is a design phase. You use the extraction output to make decisions and fill in the mapping templates.
 
@@ -630,7 +554,7 @@ No scripts. This is a design phase. You use the extraction output to make decisi
 
 These CSVs are the master reference for the rest of the engagement. Keep them in the repo under `output/mappings/` or in a shared spreadsheet.
 
-#### Part 3: Data Migration (transform phase)
+#### Data Migration (transform phase)
 
 After the mapping templates are filled, these scripts validate the mappings and produce ID translation tables for the import tools.
 
@@ -642,7 +566,7 @@ After the mapping templates are filled, these scripts validate the mappings and 
 
 Run these before every test migration pass. If a mapping is missing or invalid, the script fails with a clear error. Fix the CSV and re-run.
 
-#### Part 5: Test Cycles (validation phase)
+#### Test Cycles (validation phase)
 
 After each test import, run these to verify data integrity.
 
@@ -655,7 +579,7 @@ After each test import, run these to verify data integrity.
 
 Run count-compare first (fast, catches bulk problems). Run field-spot-check next (slower, catches field-level problems). Run link-integrity and assets-verify if those data types are in scope.
 
-#### Part 6: Cutover
+#### Cutover
 
 | Script | Path | What it does | Output |
 |---|---|---|---|
@@ -733,18 +657,13 @@ output/                    All script output (gitignored)
 ```
 
 
-## Part 8: Platform Quirks Reference
+## Platform Quirks Reference
 
 The knowledge that separates a consultant who has done this from one who has read about it.
 
 ### Jira Cloud Quirks
 
-- Entity IDs (project, status, custom field) change between instances. Never hardcode IDs in automation rules, filters, or scripts.
-- JCMA silently remaps statuses when it finds a name collision. Check the migration log, but also spot-check actual issue statuses.
-- Cloud custom fields cannot have the same name as a system field. "Summary" as a custom field name will collide.
-- Automation rules have execution limits. A rule that fires on every issue update in a 100,000-issue migration will hit the monthly limit and silently stop. Disable non-essential automation during import.
-- Cloud Forms replaced the simple field-on-portal model from older JSM. Request types now use Forms for portal display, which changes how field visibility and conditional logic work.
-- Atlassian is renaming "issues" to "work items" and "projects" to "spaces." The rollout is gradual. APIs still use the old terms. Build automation and scripts using "issue" and "project" terminology since that is what the APIs expect.
+See [quirks/jira-cloud-gotchas.md](quirks/jira-cloud-gotchas.md) for Cloud quirks and DC-to-Cloud gaps.
 
 ### Assets/CMDB Quirks
 
@@ -758,35 +677,19 @@ The knowledge that separates a consultant who has done this from one who has rea
 
 ### BMC Remedy/Helix Quirks
 
-- Remedy form names use a vendor-prefix convention (HPD:Help Desk, CHG:Infrastructure Change). Extraction scripts must handle the colon in form names.
-- Remedy stores work log entries in a separate form (HPD:WorkLog) joined by Incident Number. Each work log entry becomes a Jira comment.
-- Remedy's "Assigned Group" and "Assignee" model uses Support Groups and People forms. These must be mapped to Jira project roles and user accounts.
-- Remedy categorization (Tier 1/2/3) supports different option trees per template. If the client uses multiple templates, each has its own category hierarchy to map.
-- Remedy CMDB (Atrium) uses reconciliation rules to merge discovery data with manual entries. JSM Assets has no native reconciliation. Plan for a single source of truth per attribute.
-- Helix (cloud version) has a different API from on-premise Remedy. Confirm which version before writing extraction scripts.
+See [bmc-remedy-migration.md](bmc-remedy-migration.md#quirks).
 
 ### Cherwell Quirks
 
-- Cherwell Business Object IDs are GUIDs. The extraction API uses these GUIDs, not human-readable names, for queries.
-- Cherwell "One-Step" actions can chain dozens of operations. Document each step before attempting to replicate in Jira automation.
-- Cherwell supports "Merged" tickets (combining duplicates). Jira does not have native ticket merging. Use issue linking with "duplicates" link type instead.
-- Cherwell's Journal (activity log) is a single field with formatted entries. Splitting journal entries into individual Jira comments requires parsing the formatting.
+See [cherwell-migration.md](cherwell-migration.md#quirks).
 
 ### Ivanti Quirks
 
-- Ivanti stores attachments differently than Jira. Binary attachment extraction may require database-level access rather than API.
-- Ivanti's "Urgency/Impact to Priority" matrix is built into the platform. Jira has no native equivalent; you rebuild it with automation rules.
-- Ivanti workflow states do not have categories. You must assign categories during the status mapping.
-- Ivanti custom field IDs are GUIDs, not incrementing integers. Your mapping table needs to handle both formats.
+See [ivanti-migration.md](ivanti-migration.md#quirks).
 
 ### ServiceNow Quirks
 
-- ServiceNow uses "dot-walking" for related record fields (e.g., caller_id.department). These flattened references must be resolved to actual JSM Assets references or custom field values.
-- ServiceNow update sets contain customizations but not data. Export customizations separately from data, and use them as requirements documentation for the JSM target design.
-- ServiceNow scoped applications create isolated namespaces. Custom tables in scoped apps may not be accessible via the standard Table API. Check access before planning extraction.
-- ServiceNow GlideRecord queries in business rules use a proprietary syntax. There is no automated translation to Jira automation rules. Each business rule is a manual redesign.
-- ServiceNow's CMDB has a "Reclassification" feature (changing a CI's class). JSM Assets does not support changing an object's type after creation. Reclassified CIs need to be deleted and recreated as the new type.
-- ServiceNow CMDB identification rules (used for reconciliation) have no JSM equivalent. Define a Name-based uniqueness convention instead.
+See [servicenow-migration.md](servicenow-migration.md#quirks).
 
 ### HPSM/SMAX Quirks
 
@@ -810,11 +713,4 @@ The knowledge that separates a consultant who has done this from one who has rea
 
 ### DC to Cloud Gaps
 
-- ScriptRunner Cloud has partial parity with DC. Many scripts, listeners, and workflow functions work, but with a different execution environment. Evaluate each script individually rather than assuming a full rewrite.
-- No Behaviours (DC-only ScriptRunner feature). Cloud Forms conditional logic covers some cases, but not all.
-- No custom REST endpoints (DC-only ScriptRunner feature). External integrations that call ScriptRunner endpoints must be rewritten against the standard Jira REST API or a Forge app.
-- No Escalation Services or full HAPI on Cloud.
-- Assets Discovery works on Cloud (Premium/Enterprise), but the configuration UI and import targets differ from DC. Plan to reconfigure Discovery agents post-migration.
-- No object type-level permissions in Assets. Schema-level permissions only.
-- No Referenced or Read-only custom field types for Assets. Cloud has a single Assets object field type.
-- DC's six built-in importers (CSV, Database, JSON, LDAP, Jira Users, Object Schema) are replaced by Data Manager adapters on Cloud, which are more powerful but work differently.
+See [quirks/jira-cloud-gotchas.md](quirks/jira-cloud-gotchas.md#dc-to-cloud-gaps).
