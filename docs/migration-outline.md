@@ -15,9 +15,9 @@ Open the source system and start documenting. Every migration starts with the sa
 
 **Custom fields.** Export the full custom field list. In Jira DC, there are often 200+ custom fields, and half of them are orphaned or duplicated because three different admins created "Priority" over five years. For each field, note the type (text, select, multi-select, cascading select, user picker, date, Assets object), which projects use it, and whether it has multiple contexts with different option sets. Cascading selects and Assets object fields are the hardest to migrate. User picker fields break when account IDs change between instances.
 
-**Workflows.** Map every workflow: statuses, transitions, conditions, validators, and post-functions. In Jira DC, ScriptRunner post-functions are the biggest risk area because Cloud has no Groovy. A workflow with 12 ScriptRunner post-functions needs a complete redesign, not a migration. In Ivanti, the workflow engine is fundamentally different from Jira, so every workflow is a rebuild.
+**Workflows.** Map every workflow: statuses, transitions, conditions, validators, and post-functions. In Jira DC, ScriptRunner post-functions are the biggest risk area because ScriptRunner Cloud has partial parity with DC — many scripts migrate directly, but features like Behaviours, custom REST endpoints, and Escalation Services are DC-only. A workflow with 12 ScriptRunner post-functions needs careful evaluation: some will work on Cloud ScriptRunner, others need Cloud Automation rules or Forge apps. In Ivanti, the workflow engine is fundamentally different from Jira, so every workflow is a rebuild.
 
-**Automation rules and scripts.** Inventory every automation rule, ScriptRunner script, listener, behaviour, escalation service, and scheduled job. Categorize each one: can it be replicated in Cloud Automation, does it need a Forge app, or is it impossible on Cloud? This categorization drives the biggest timeline decisions on the project.
+**Automation rules and scripts.** Inventory every automation rule, ScriptRunner script, listener, behaviour, escalation service, and scheduled job. Categorize each one: does it work on ScriptRunner Cloud as-is, can it be replicated in Cloud Automation, does it need a Forge app, or does it require a process change? This categorization drives the biggest timeline decisions on the project.
 
 **SLAs.** Document every SLA definition: the calendar, the goal, the start/pause/stop conditions, and the request types it applies to. SLAs are tightly coupled to workflow statuses. If you change the workflow, every SLA that references those statuses breaks. This is the most common "everything looked fine until we turned on SLAs" failure.
 
@@ -97,10 +97,11 @@ Reopened                  In Progress             In Progress
 
 **Transition logic.** For each transition, document conditions (who can execute it), validators (what must be true), and post-functions (what happens after). On DC, post-functions are often ScriptRunner Groovy scripts that update Assets objects, send custom notifications, or calculate field values. On Cloud, these become Automation rules, which have different capabilities and limitations.
 
-**The ScriptRunner gap.** This is the single biggest migration challenge from DC to Cloud. Every ScriptRunner post-function, listener, behaviour, escalation service, and script field must be evaluated:
+**The ScriptRunner gap.** ScriptRunner is available on Cloud but with partial parity. Many workflow post-functions, listeners, and script fields work on ScriptRunner Cloud, but Behaviours, custom REST endpoints, HAPI, and Escalation Services are DC-only. Every ScriptRunner customization must be evaluated:
 
-- Can it be replicated with Cloud Automation? (about 60% of cases)
-- Does it need a Forge app? (about 20%)
+- Does it work on ScriptRunner Cloud as-is? (about 40% of cases)
+- Can it be replicated with Cloud Automation? (about 30%)
+- Does it need a Forge app? (about 15%)
 - Is it impossible on Cloud and needs a process change? (about 20%)
 
 Document each one with the replacement approach.
@@ -181,7 +182,7 @@ JCMA handles the bulk of a DC-to-Cloud Jira migration. It migrates projects, iss
 
 **What JCMA does poorly or not at all:**
 - Custom field contexts get flattened or lost
-- ScriptRunner scripts and configurations do not migrate
+- ScriptRunner scripts and configurations do not migrate via JCMA (must be manually ported to ScriptRunner Cloud or replaced)
 - Automation rules do not migrate
 - SLA definitions do not migrate
 - Dashboard and filter ownership may break
@@ -482,20 +483,21 @@ Build every target workflow in the Cloud workflow editor. Test each one by manua
 
 ### Automation Rules
 
-Build Cloud automation rules to replace DC post-functions and ScriptRunner scripts. Common replacements:
+Build Cloud automation rules or migrate to ScriptRunner Cloud to replace DC post-functions and scripts. Many ScriptRunner scripts work on Cloud ScriptRunner with minimal changes. For scripts that don't port directly, common replacements:
 
-- ScriptRunner "set field value on transition" becomes an Automation rule with "When: status changes to X" trigger and "Then: edit fields" action
-- ScriptRunner "create linked issue" becomes Automation "Then: create issue"
-- ScriptRunner "send custom notification" becomes Automation "Then: send email"
-- ScriptRunner "update Assets object" becomes Automation "Then: edit Assets object" (limited support, may need REST API action)
+- ScriptRunner "set field value on transition" — often works on ScriptRunner Cloud; alternatively becomes an Automation rule with "When: status changes to X" trigger and "Then: edit fields" action
+- ScriptRunner "create linked issue" — works on ScriptRunner Cloud or becomes Automation "Then: create issue"
+- ScriptRunner "send custom notification" — works on ScriptRunner Cloud or becomes Automation "Then: send email"
+- ScriptRunner "update Assets object" — may need Automation "Then: edit Assets object" (limited support, may need REST API action)
 
-**What cannot be replicated:**
-- Complex Groovy logic (loops, conditional branching, API calls)
-- ScriptRunner Behaviours (dynamic form field visibility)
-- ScriptRunner custom REST endpoints
-- ScriptRunner scheduled jobs with complex logic
+**DC-only ScriptRunner features (not available on Cloud):**
+- ScriptRunner Behaviours (dynamic form field visibility) — use Cloud Forms conditional logic or Forge apps
+- ScriptRunner custom REST endpoints — rewrite against Jira REST API or Forge apps
+- ScriptRunner Escalation Services
+- Some HAPI features
+- Full server-side Groovy with unrestricted JVM access
 
-For these, evaluate: Forge app, third-party Marketplace app, manual process change, or accept the gap.
+For these, evaluate: ScriptRunner Cloud alternatives, Forge app, third-party Marketplace app, manual process change, or accept the gap.
 
 ### Custom Fields
 
@@ -710,9 +712,10 @@ The knowledge that separates a consultant who has done this from one who has rea
 
 ### DC to Cloud Gaps
 
-- No ScriptRunner Groovy. Every script must be replaced.
-- No Behaviours (dynamic form field visibility). Cloud Forms conditional logic covers some cases, but not all.
-- No custom REST endpoints. External integrations that call ScriptRunner endpoints must be rewritten against the standard Jira REST API or a Forge app.
+- ScriptRunner Cloud has partial parity with DC. Many scripts, listeners, and workflow functions work, but with a different execution environment. Evaluate each script individually rather than assuming a full rewrite.
+- No Behaviours (DC-only ScriptRunner feature). Cloud Forms conditional logic covers some cases, but not all.
+- No custom REST endpoints (DC-only ScriptRunner feature). External integrations that call ScriptRunner endpoints must be rewritten against the standard Jira REST API or a Forge app.
+- No Escalation Services or full HAPI on Cloud.
 - Assets Discovery works on Cloud (Premium/Enterprise), but the configuration UI and import targets differ from DC. Plan to reconfigure Discovery agents post-migration.
 - No object type-level permissions in Assets. Schema-level permissions only.
 - No Referenced or Read-only custom field types for Assets. Cloud has a single Assets object field type.
