@@ -13,15 +13,15 @@ Open the source system and start documenting. Every migration starts with the sa
 
 **Projects and service desks.** How many are there? A 3-project JSM DC instance is a different conversation than a 40-project Ivanti setup. List every project, its issue types, approximate issue count, and who owns it. Some projects will be abandoned but still have data. Some will be test instances someone forgot to delete. Flag them now.
 
-**Custom fields.** Export the full custom field list. In Jira DC, there are often 200+ custom fields, and half of them are orphaned or duplicated because three different admins created "Priority" over five years. For each field, note the type (text, select, multi-select, cascading select, user picker, date, Assets object), which projects use it, and whether it has multiple contexts with different option sets. Cascading selects and Assets object fields are the hardest to migrate. User picker fields break when account IDs change between instances.
+**Custom fields.** Export the full custom field list. Run `tools/extract/field-inventory.js` to pull fields from both source and target and cross-reference them automatically. In Jira DC, there are often 200+ custom fields, and half of them are orphaned or duplicated because three different admins created "Priority" over five years. For each field, note the type (text, select, multi-select, cascading select, user picker, date, Assets object), which projects use it, and whether it has multiple contexts with different option sets. Cascading selects and Assets object fields are the hardest to migrate. User picker fields break when account IDs change between instances.
 
-**Workflows.** Map every workflow: statuses, transitions, conditions, validators, and post-functions. In Jira DC, ScriptRunner post-functions are the biggest risk area because ScriptRunner Cloud has partial parity with DC — many scripts migrate directly, but features like Behaviours, custom REST endpoints, and Escalation Services are DC-only. A workflow with 12 ScriptRunner post-functions needs careful evaluation: some will work on Cloud ScriptRunner, others need Cloud Automation rules or Forge apps. In Ivanti, the workflow engine is fundamentally different from Jira, so every workflow is a rebuild.
+**Workflows.** Map every workflow: statuses, transitions, conditions, validators, and post-functions. Run `tools/extract/workflow-inventory.js` to pull full transition detail and flag ScriptRunner post-functions. In Jira DC, ScriptRunner post-functions are the biggest risk area because ScriptRunner Cloud has partial parity with DC — many scripts migrate directly, but features like Behaviours, custom REST endpoints, and Escalation Services are DC-only. A workflow with 12 ScriptRunner post-functions needs careful evaluation: some will work on Cloud ScriptRunner, others need Cloud Automation rules or Forge apps. In Ivanti, the workflow engine is fundamentally different from Jira, so every workflow is a rebuild.
 
-**Automation rules and scripts.** Inventory every automation rule, ScriptRunner script, listener, behaviour, escalation service, and scheduled job. Categorize each one: does it work on ScriptRunner Cloud as-is, can it be replicated in Cloud Automation, does it need a Forge app, or does it require a process change? This categorization drives the biggest timeline decisions on the project.
+**Automation rules and scripts.** Inventory every automation rule, ScriptRunner script, listener, behaviour, escalation service, and scheduled job. Run `tools/extract/scriptrunner-audit.js` to pull the full ScriptRunner configuration and auto-categorize each item for Cloud compatibility. Categorize each one: does it work on ScriptRunner Cloud as-is, can it be replicated in Cloud Automation, does it need a Forge app, or does it require a process change? This categorization drives the biggest timeline decisions on the project.
 
 **SLAs.** Document every SLA definition: the calendar, the goal, the start/pause/stop conditions, and the request types it applies to. SLAs are tightly coupled to workflow statuses. If you change the workflow, every SLA that references those statuses breaks. This is the most common "everything looked fine until we turned on SLAs" failure.
 
-**Permissions and users.** Export permission schemes, project roles, and group memberships. Note any permission scheme that uses custom conditions or ScriptRunner-based permission checks. Map user accounts: who has agent licenses, who is a customer, who is a collaborator? For DC-to-Cloud, every username becomes an Atlassian account tied to an email address. Service accounts with no real email are a problem.
+**Permissions and users.** Export permission schemes, project roles, and group memberships. Run `tools/extract/scheme-inventory.js` for schemes and `tools/extract/user-inventory.js` for users and groups. Note any permission scheme that uses custom conditions or ScriptRunner-based permission checks. Map user accounts: who has agent licenses, who is a customer, who is a collaborator? For DC-to-Cloud, every username becomes an Atlassian account tied to an email address. Service accounts with no real email are a problem.
 
 **Assets/CMDB schemas.** If Assets or Insight is in scope, document every object schema: the type hierarchy, attributes per type, reference types, status definitions, automation rules, and record counts. Note any ScriptRunner automation that touches Assets objects. Note any Assets custom fields on Jira issues and which request types use them.
 
@@ -79,7 +79,7 @@ Map portal groups. How are request types organized on the customer portal? Typic
 
 Design target workflows before migrating any data. Every imported issue must land in a valid status.
 
-**Status category alignment.** Jira Cloud requires every status to belong to a category: To Do, In Progress, or Done. Map every source status to a target status with the correct category. A source system with 45 statuses across 8 workflows might map to 15 target statuses across 3 workflows. The mapping table is the single most important artifact in a workflow migration.
+**Status category alignment.** Jira Cloud requires every status to belong to a category: To Do, In Progress, or Done. Map every source status to a target status with the correct category using `templates/status-mapping.csv` and the workflow inventory at `output/extract/workflows-source.json`. A source system with 45 statuses across 8 workflows might map to 15 target statuses across 3 workflows. The mapping table is the single most important artifact in a workflow migration.
 
 Example mapping:
 
@@ -108,7 +108,7 @@ Document each one with the replacement approach.
 
 ### Field Schema Design
 
-**Field mapping table.** For every source custom field, define the target:
+**Field mapping table.** Start from `templates/field-mapping.csv` and the cross-reference in `output/extract/fields-crossref.json`. For every source custom field, define the target:
 
 ```
 Source Field          Source Type          Target Field        Target Type       Transform
@@ -164,11 +164,11 @@ Extract  -->  Normalize  -->  Transform  -->  Validate  -->  Import  -->  Verify
 
 **Transform.** Apply the field mapping table. Map source statuses to target statuses. Convert field values (e.g., source "High" becomes target "P2"). Handle multi-select formatting differences. Restructure nested data.
 
-**Validate.** Before importing, run validation checks offline. Do all status values map to valid target statuses? Do all user references resolve to valid accounts? Do all Assets references point to objects that exist? Are all required fields populated? Catch errors here, not after import.
+**Validate.** Before importing, run validation checks offline. Run `tools/transform/field-mapper.js`, `tools/transform/status-mapper.js`, and `tools/transform/user-mapper.js` to validate every mapping. Do all status values map to valid target statuses? Do all user references resolve to valid accounts? Do all Assets references point to objects that exist? Are all required fields populated? Catch errors here, not after import.
 
 **Import.** Push data to the target. For Jira, use JCMA, the REST API, or CSV import. For Assets, use the Assets REST API.
 
-**Verify.** After import, compare source and target. Record counts per project and type. Spot-check field values on a sample of records. Verify attachments exist and are readable. Verify links between issues are intact. Verify Assets objects have correct references.
+**Verify.** After import, compare source and target. Run `tools/validate/count-compare.js` for record counts, `tools/validate/field-spot-check.js` for field values on a sample, `tools/validate/link-integrity.js` for issue links, and `tools/validate/assets-verify.js` for Assets objects. Verify attachments exist and are readable.
 
 ### JCMA (Jira Cloud Migration Assistant)
 
@@ -520,14 +520,15 @@ Build the customer portal. Create request type groups, assign request types, con
 
 **Pass 1: Smoke test.** Migrate a single project or a small subset. Verify the pipeline works end to end. Check that issues appear, fields are populated, statuses are correct, and attachments are present. Fix pipeline bugs.
 
-**Pass 2: Full test migration.** Migrate everything to a staging environment. Run the complete test plan:
+**Pass 2: Full test migration.** Migrate everything to a staging environment. Run the validation scripts and the complete test plan:
 
-- Record counts match source (per project, per issue type)
-- Sample 50 random issues and verify every field value
-- Verify all workflow transitions work
-- Verify SLAs calculate correctly
-- Verify automation rules fire
-- Verify Assets objects exist with correct references
+- `tools/validate/count-compare.js` -- record counts match source (per project, per issue type)
+- `tools/validate/field-spot-check.js --sample 50` -- sample 50 random issues and verify every field value
+- `tools/validate/link-integrity.js` -- issue links survived
+- `tools/validate/assets-verify.js` -- Assets objects exist with correct references
+- Verify all workflow transitions work (manual)
+- Verify SLAs calculate correctly (manual)
+- Verify automation rules fire (manual)
 - Verify customer portal works (submit request, check queue, resolve)
 - Verify dashboards and filters return results
 - Verify email notifications send
@@ -558,7 +559,7 @@ Build the customer portal. Create request type groups, assign request types, con
 ### Cutover Execution
 
 1. Freeze the source system (read-only or announce freeze)
-2. Run the final delta extraction (new issues since last test migration)
+2. Run the final delta extraction with `tools/extract/delta-extract.js --since <last-test-migration-timestamp>` (new issues since last test migration)
 3. Transform and validate the delta
 4. Import the delta to the production target
 5. Run verification checks (counts, sample spot-checks)
@@ -598,41 +599,138 @@ First month: decommission the source system (or set to read-only archive). Trans
 
 ## Part 7: The Consultant's Toolkit
 
-### Scripts You Will Write on Every Engagement
+Every migration uses the same set of scripts, templates, and deliverables. The table below maps each tool to where it lives in the repo and when you use it during the engagement.
 
-- **Field inventory extractor.** Pulls all custom fields, their types, contexts, and options from source via API. You will run this on day one and reference it constantly.
-- **Status mapper.** Takes the status mapping table and validates that every source issue has a valid target status. Flags orphaned statuses.
-- **User mapper.** Matches source usernames/emails to target Atlassian account IDs. Flags unmatched accounts.
-- **Assets dependency sorter.** Given an Assets schema, computes the import order based on reference dependencies. cmdb-kit provides this as the LOAD_PRIORITY array and a working JSM adapter - use it directly rather than writing your own.
-- **Post-import verifier.** Compares source and target record by record. Flags mismatches on count, field values, and reference integrity.
-- **Delta extractor.** Pulls only records created or modified since a given timestamp, for the final cutover delta.
+### Scripts by Migration Phase
+
+#### Part 1: Discovery (day one)
+
+Run these immediately to scope the work. Their output feeds every decision that follows.
+
+| Script | Path | What it does | Output |
+|---|---|---|---|
+| Field inventory | `tools/extract/field-inventory.js` | Pulls all custom fields from source and target, cross-references by name and type. Flags duplicates, orphans, and type mismatches. | `output/extract/fields-source.json`, `fields-target.json`, `fields-crossref.json` |
+| Scheme inventory | `tools/extract/scheme-inventory.js` | Pulls permission, notification, issue type, screen, field config, and workflow schemes. Flags defaults (CMJ cannot export), unused, and duplicates. | `output/extract/schemes-source.json`, `schemes-target.json` |
+| User inventory | `tools/extract/user-inventory.js` | Pulls all users and groups from both sides. Cross-references by email. Flags conflicts, service accounts, and inactive users. | `output/extract/users-source.json`, `users-target.json`, `users-crossref.json` |
+| Issue counts | `tools/extract/issue-counts.js` | Counts issues per project, per type, per status. Baseline for post-migration validation. | `output/extract/issue-counts-source.json` |
+| Workflow inventory | `tools/extract/workflow-inventory.js` | Pulls all workflows with full transition detail. Flags ScriptRunner post-functions by class name. | `output/extract/workflows-source.json` |
+| ScriptRunner audit | `tools/extract/scriptrunner-audit.js` | Inventories all ScriptRunner config (script fields, listeners, behaviours, escalation services, custom endpoints, scheduled jobs). Auto-categorizes each for Cloud compatibility. | `output/extract/scriptrunner-audit.json` |
+
+The field inventory and issue counts run first. The workflow and ScriptRunner inventories run next because they depend on knowing which fields and projects matter. The scheme inventory can run in parallel with anything.
+
+#### Part 2: Target Design
+
+No scripts. This is a design phase. You use the extraction output to make decisions and fill in the mapping templates.
+
+| Template | Path | What you do with it |
+|---|---|---|
+| Field mapping CSV | `templates/field-mapping.csv` | One row per source field. Columns: source name, source ID, source type, target name, target ID, target type, action (map/skip/create/rename), notes. Fill this using the field inventory cross-reference. |
+| Status mapping CSV | `templates/status-mapping.csv` | One row per source status. Columns: source status, source category, target status, target category, notes. Fill this using the workflow inventory. |
+| User mapping CSV | `templates/user-mapping.csv` | One row per source user. Columns: source username, source email, display name, target account ID, target email, action, notes. Fill this using the user inventory cross-reference. |
+
+These CSVs are the master reference for the rest of the engagement. Keep them in the repo under `output/mappings/` or in a shared spreadsheet.
+
+#### Part 3: Data Migration (transform phase)
+
+After the mapping templates are filled, these scripts validate the mappings and produce ID translation tables for the import tools.
+
+| Script | Path | What it does | Output |
+|---|---|---|---|
+| Field mapper | `tools/transform/field-mapper.js` | Reads the field mapping CSV and field inventories. Validates every source field with data has a mapping. Checks type compatibility. Produces field ID translation table. | `output/transform/field-id-map.json` |
+| Status mapper | `tools/transform/status-mapper.js` | Reads the status mapping CSV, workflow inventory, and issue counts. Validates every source status with issues has a valid target status. Warns on category misalignment. | `output/transform/status-map.json` |
+| User mapper | `tools/transform/user-mapper.js` | Reads the user mapping CSV and user inventories. Produces username-to-account-ID translation table. Flags unresolved accounts. | `output/transform/user-map.json` |
+
+Run these before every test migration pass. If a mapping is missing or invalid, the script fails with a clear error. Fix the CSV and re-run.
+
+#### Part 5: Test Cycles (validation phase)
+
+After each test import, run these to verify data integrity.
+
+| Script | Path | What it does | Output |
+|---|---|---|---|
+| Count compare | `tools/validate/count-compare.js` | Compares source issue counts against live target. Flags mismatches per project, per type, per status. | `output/validate/count-compare.json` |
+| Field spot-check | `tools/validate/field-spot-check.js` | Samples N random issues from source, fetches same on target, compares every mapped field value. | `output/validate/spot-check.json` |
+| Link integrity | `tools/validate/link-integrity.js` | Verifies all issue links survived migration. Flags orphaned or missing links. | `output/validate/link-integrity.json` |
+| Assets verify | `tools/validate/assets-verify.js` | Compares Assets object counts per type, samples objects and compares attributes, checks reference integrity. | `output/validate/assets-verify.json` |
+
+Run count-compare first (fast, catches bulk problems). Run field-spot-check next (slower, catches field-level problems). Run link-integrity and assets-verify if those data types are in scope.
+
+#### Part 6: Cutover
+
+| Script | Path | What it does | Output |
+|---|---|---|---|
+| Delta extract | `tools/extract/delta-extract.js` | Pulls issues created or modified since a given timestamp. Used for the final cutover delta after source freeze. | `output/extract/delta-YYYY-MM-DDTHH-MM.json` |
+
+After source freeze, run delta-extract to capture anything created since the last test migration. Transform and import the delta. Then run the validation scripts one final time against production.
+
+### Shared Foundation
+
+All scripts use a shared API client and config file.
+
+| Component | Path | Purpose |
+|---|---|---|
+| API client | `tools/lib/client.js` | Thin wrapper handling DC auth (basic), Cloud auth (email + API token), pagination (offset for DC, cursor for Cloud), and rate limiting (backoff on 429). Every script imports this. |
+| Config file | `.migrationrc.json` (gitignored) | Connection details for source and target instances. Base URLs, auth credentials, Assets workspace ID, output directory. |
+
+### External Tools
+
+These are not scripts in this repo. They handle the actual import.
+
+- **JCMA** for bulk DC-to-Cloud Jira migration (issues, users, groups, basic config)
+- **CMJ** (Appfire) for granular DC-to-DC and DC-to-Cloud migration (schemes, workflows, incremental)
+- **cmdb-kit** for Assets/CMDB schema design, dependency sorting (LOAD_PRIORITY), and idempotent import via JSM adapter
+- **Source platform APIs** (ServiceNow Table API, BMC REST API, Cherwell Business Object API, Freshservice API, Zendesk API) for non-Jira source extraction
+- **pull-docs.js** (`tools/pull-docs.js`) for pulling vendor documentation to markdown for offline reference
 
 ### Documents You Will Deliver on Every Engagement
 
-- Migration assessment (Part 1 output)
-- Field mapping table (the master reference, updated throughout)
-- Status mapping table
-- User mapping table
-- Workflow design document (target workflows with transition diagrams)
-- Test plan and test results
-- Cutover runbook
-- As-built configuration document
-- Known issues and workarounds
-- Post-migration admin guide
+| Document | When | Source |
+|---|---|---|
+| Migration assessment | End of Part 1 | Discovery script output, stakeholder interviews |
+| Field mapping table | Part 2, updated throughout | `templates/field-mapping.csv` + field inventory |
+| Status mapping table | Part 2, updated throughout | `templates/status-mapping.csv` + workflow inventory |
+| User mapping table | Part 2, updated throughout | `templates/user-mapping.csv` + user inventory |
+| ScriptRunner compatibility report | Part 2 | `output/extract/scriptrunner-audit.json` |
+| Workflow design document | Part 2 | Target workflows with transition diagrams |
+| Test plan and test results | Part 5 | Validation script output |
+| Cutover runbook | Before Part 6 | Step-by-step with timing estimates from test cycles |
+| As-built configuration document | After Part 6 | Final target state |
+| Known issues and workarounds | After Part 6 | Accumulated during test cycles |
+| Post-migration admin guide | After Part 6 | Ongoing operations for the client team |
 
-### Tools You Will Use
+### File Layout
 
-- JCMA for bulk DC-to-Cloud Jira migration
-- CMJ (Appfire) for granular DC-to-DC and DC-to-Cloud migration
-- cmdb-kit for Assets/CMDB schema design and import
-- Jira REST API for extraction, validation, and custom imports
-- Assets REST API for schema and data migration
-- Source platform APIs (ServiceNow Table API, BMC REST API, Cherwell Business Object API, Freshservice API, Zendesk API, etc.)
-- Python or Node.js for data transformation scripts
-- CSV/JSON as the interchange format between extract and import
-- A spreadsheet for the field mapping table (everyone understands Excel)
-- Confluence for migration documentation and runbooks
-- Jira for migration project tracking (track your own work in the tool you're migrating to)
+```
+tools/
+  lib/
+    client.js              Shared API client (auth, pagination, rate limiting)
+  extract/
+    field-inventory.js     Part 1: custom fields from source and target
+    scheme-inventory.js    Part 1: all scheme types from source and target
+    user-inventory.js      Part 1: users and groups from source and target
+    issue-counts.js        Part 1: issue counts per project/type/status
+    workflow-inventory.js  Part 1: workflows with transition detail
+    scriptrunner-audit.js  Part 1: ScriptRunner config and Cloud compatibility
+    delta-extract.js       Part 6: issues changed since timestamp
+  transform/
+    field-mapper.js        Part 3: validate field mapping, produce ID translation
+    status-mapper.js       Part 3: validate status mapping
+    user-mapper.js         Part 3: validate user mapping, produce account ID map
+  validate/
+    count-compare.js       Part 5: compare issue counts source vs target
+    field-spot-check.js    Part 5: sample issues, compare field values
+    link-integrity.js      Part 5: verify issue links survived
+    assets-verify.js       Part 5: verify Assets objects and references
+templates/
+  field-mapping.csv        Blank template, filled during Part 2
+  status-mapping.csv       Blank template, filled during Part 2
+  user-mapping.csv         Blank template, filled during Part 2
+output/                    All script output (gitignored)
+  extract/                 Raw extraction JSON
+  transform/               Mapping and translation JSON
+  validate/                Verification reports
+  mappings/                Filled-in mapping CSVs (working copies)
+```
 
 
 ## Part 8: Platform Quirks Reference
