@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-migration-kit is an Atlassian ITSM migration toolkit covering Jira DC to Cloud, Ivanti to JSM, and JSM to JSM migrations. It provides documentation, scripts, templates, and reference material for the full migration lifecycle.
+migration-kit is an ITSM migration toolkit covering Jira DC to Cloud, Jira to GitLab, Ivanti to JSM, and JSM to JSM migrations. It provides documentation, scripts, templates, and reference material for the full migration lifecycle.
 
 ## Key Files and Directories
 
@@ -18,6 +18,7 @@ docs/
   bmc-remedy-migration.md           BMC Remedy/Helix to JSM guide
   ivanti-migration.md               Ivanti to JSM guide
   cherwell-migration.md             Cherwell to JSM guide
+  gitlab-migration.md               Jira to GitLab migration guide
   quirks/                           Platform gotchas and terminology
   wip/                              Plans and drafts
 tools/
@@ -25,6 +26,7 @@ tools/
   extract/                          Extraction scripts (API pulls, exports)
   transform/                        Data transformation (field mapping, normalization)
   validate/                         Pre and post migration validation
+  gitlab/                           Jira-to-GitLab adapter (client, extract, import, validate)
 templates/                          Checklists and CSV mapping templates
 src/reference/                      Pulled platform docs (gitignored)
 ```

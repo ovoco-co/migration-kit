@@ -1,9 +1,11 @@
 # migration-kit
 
-Atlassian ITSM migration toolkit. Scripts, templates, and documentation for migrating to Jira Service Management from other ITSM platforms (Jira DC, Ivanti, ServiceNow) or between JSM instances.
+ITSM migration toolkit. Scripts, templates, and documentation for migrating from Jira (DC or Cloud) to GitLab, Jira Service Management, or between JSM instances. Also covers migrations from Ivanti, ServiceNow, BMC Remedy, and Cherwell to JSM.
 
 ## What This Covers
 
+- Jira to GitLab migration (extract, import, validate)
+- Jira DC to Cloud migration (field, status, user mapping)
 - Platform assessment and gap analysis
 - Field mapping (custom field types, contexts, edge cases)
 - Workflow mapping (statuses, transitions, post-functions, category alignment)
@@ -27,6 +29,7 @@ docs/
   bmc-remedy-migration.md           BMC Remedy/Helix to JSM guide
   ivanti-migration.md               Ivanti to JSM guide
   cherwell-migration.md             Cherwell to JSM guide
+  gitlab-migration.md               Jira to GitLab migration guide
   quirks/                           Platform gotchas and terminology
   wip/                              Plans and drafts
 tools/
@@ -34,6 +37,7 @@ tools/
   extract/                          Extraction scripts (API pulls, exports)
   transform/                        Data transformation (field mapping, normalization)
   validate/                         Pre and post migration validation
+  gitlab/                           Jira-to-GitLab adapter (client, extract, import, validate)
   pull-docs.js                      Pull vendor docs to markdown for offline reference
 templates/
   jira-server-migration-checklist.md        DC to DC (CMJ-based)
@@ -42,9 +46,10 @@ templates/
   field-mapping.csv                 Field mapping template
   status-mapping.csv                Status mapping template
   user-mapping.csv                  User mapping template
+  gitlab-label-mapping.csv          Jira-to-GitLab label mapping template
 src/reference/                      Pulled platform docs (gitignored)
 ```
 
 ## Related
 
-- [cmdb-kit](https://github.com/ovoco/cmdb-kit) - CMDB schema starter kit with JSM Assets adapter. Use cmdb-kit's schema-as-code pattern and validation tools for the Assets/CMDB portion of a migration.
+- [cmdb-kit](https://github.com/ovoco-co/cmdb-kit) - CMDB schema starter kit with JSM Assets adapter. Use cmdb-kit's schema-as-code pattern and validation tools for the Assets/CMDB portion of a migration.
