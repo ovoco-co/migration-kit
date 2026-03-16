@@ -1,5 +1,7 @@
 # ServiceNow Migration Guide
 
+> **Tested against:** ServiceNow Zurich release (March 2026). Table API endpoints, query parameters, authentication, CMDB class hierarchy, and all table names referenced below have been verified against a live Zurich instance. Basic auth, offset-based pagination, and the `{ result: [...] }` response wrapper are unchanged from Xanadu.
+
 This document covers both directions: migrating from ServiceNow to JSM, and migrating from Jira (DC or Cloud) to ServiceNow. Both directions are increasingly common as Atlassian Data Center reaches end-of-life and government programs evaluate platform options.
 
 
