@@ -36,6 +36,10 @@ docs/
   bmc-remedy-migration.md           BMC Remedy/Helix to JSM guide + quirks (moved from outline)
   ivanti-migration.md               Ivanti to JSM guide + quirks (moved from outline)
   cherwell-migration.md             Cherwell to JSM guide + quirks (moved from outline)
+  platforms/
+    servicenow-fields.md            ServiceNow field reference by table
+    servicenow-jira-field-map.md    Jira to ServiceNow field mapping
+    jsm-assets-fields.md            JSM Assets attribute reference
   quirks/
     cloud-dc-terminology-map.md     exists
     jira-cloud-gotchas.md           Cloud quirks + DC-to-Cloud gaps (moved from outline Part 8)
@@ -119,6 +123,15 @@ Move platform content out of the outline first (biggest cleanup). Then new refer
 - assets-migration-reference.md
 - assessment-template.md
 - cutover-runbook.md
+
+**Platform field references** (one per platform, pulled from live instances):
+- platforms/servicenow-fields.md - every field on incident, change_request, problem, cmdb_ci and subclasses, sys_user, sys_user_group, core_company, cmn_location. Pulled from Zurich instance 2026-03-16, raw data already in cmdb-kit audit.
+- platforms/servicenow-jira-field-map.md - side-by-side Jira field to ServiceNow field mapping (Priority->priority, Assignee->assigned_to, Reporter->caller_id, Status->state, Resolution->close_code, etc.)
+- platforms/jsm-assets-fields.md - JSM Assets object type and attribute reference
+- platforms/bmc-remedy-fields.md - BMC Remedy/Helix field reference (when we have access to an instance)
+- platforms/ivanti-fields.md - Ivanti field reference (when we have access)
+
+These give migration planners a concrete field-level mapping reference instead of sending them to vendor documentation. ServiceNow is first since we have the data.
 
 **Housekeeping**:
 - Update CLAUDE.md
