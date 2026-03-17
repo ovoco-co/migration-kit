@@ -23,7 +23,7 @@ Assets objects reference other objects. If you import an object that references 
 - Pass 1: Import all objects of both types with their non-circular attributes. Omit the circular reference attributes.
 - Pass 2: Update the circular reference attributes now that all objects exist.
 
-cmdb-kit handles this automatically with its `--two-pass` flag.
+CMDB-Kit handles this automatically with its `--two-pass` flag.
 
 
 ## Schema Sync vs Data Sync
@@ -111,4 +111,4 @@ Cloud has a special **Services** schema that is read-only and auto-populated fro
 
 ## Schema Templates
 
-Cloud offers schema templates (ITAM, People, Facilities) that create pre-populated schemas with object types and attributes. If you need a clean schema for custom import (via cmdb-kit or scripts), choose **Empty schema** to avoid conflicts with template-generated types.
+Cloud offers schema templates (ITAM, People, Facilities) that create pre-populated schemas with object types and attributes. If you need a clean schema for custom import (via CMDB-Kit or scripts), choose **Empty schema** to avoid conflicts with template-generated types.

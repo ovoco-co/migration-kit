@@ -207,7 +207,7 @@ CMJ from Appfire is an alternative to JCMA for DC-to-DC and DC-to-Cloud migratio
 **CMJ limitations:**
 - Licensed per source instance, not per migration
 - Requires network connectivity between source and target
-- Does not migrate Assets/Insight schemas (use cmdb-kit for that)
+- Does not migrate Assets/Insight schemas (use CMDB-Kit for that)
 - Does not migrate Confluence content
 - Complex configuration with a learning curve
 
@@ -290,7 +290,7 @@ Zendesk migrations happen when organizations need proper ITSM capabilities (chan
 - Zendesk Macros (canned responses with field updates) have no single JSM equivalent. Split into automation rules (for field updates) and canned responses or templates (for reply text).
 - Zendesk Triggers and Automations overlap with Jira automation rules, but Zendesk's condition syntax is different. Each trigger needs manual translation.
 - Zendesk Organizations map to JSM customer organizations, but Zendesk's organization membership model (users belong to one org) differs from JSM's (customers can be in multiple organizations).
-- No CMDB on Zendesk means this is a greenfield Assets build. Use cmdb-kit to design and import the schema from scratch.
+- No CMDB on Zendesk means this is a greenfield Assets build. Use CMDB-Kit to design and import the schema from scratch.
 
 ### ManageEngine ServiceDesk Plus to JSM
 
@@ -344,14 +344,14 @@ Merging multiple JSM Cloud instances into one. Common after acquisitions or when
 
 Assets migrations have a unique complication: dependency ordering. You cannot import an Application record that references a "Production" Environment Type if the Environment Type records have not been imported yet.
 
-**Import order.** The cmdb-kit project codifies this as a LOAD_PRIORITY array (in tools/lib/constants.js) that defines the exact sequence:
+**Import order.** The CMDB-Kit project codifies this as a LOAD_PRIORITY array (in tools/lib/constants.js) that defines the exact sequence:
 
 1. Lookup types (statuses, categories, environment types) - no dependencies
 2. Directory types (organizations, teams, people) - reference lookups
 3. CI types (applications, servers, databases) - reference lookups and directory
 4. Library types (versions, deployments, documents) - reference everything
 
-Every importable type must appear in the priority list, and dependencies must come before dependents. If you are building a custom import for a client, compute the dependency graph from the schema and sort topologically, or use cmdb-kit's adapter as a starting point.
+Every importable type must appear in the priority list, and dependencies must come before dependents. If you are building a custom import for a client, compute the dependency graph from the schema and sort topologically, or use CMDB-Kit's adapter as a starting point.
 
 **Two-pass import.** Separate schema sync from data sync. First pass creates object types and attributes (schema mode). Second pass imports records (data mode). This lets you validate the schema structure before loading data, and makes it easy to re-import data without recreating types.
 
@@ -363,17 +363,17 @@ Every importable type must appear in the priority list, and dependencies must co
 
 **Reference type mapping.** By default, all object references are created as generic "Dependency" links. For a meaningful CMDB, map references to specific link types: "Runs on" for server relationships, "Owned by" for ownership, "Contains" for composition, "Member of" for group membership. A ref-type-map.json (attribute name to reference type name) makes this configurable per schema.
 
-**Schema template pitfalls.** Cloud offers pre-built schema templates (ITAM, People, Facilities). These create populated schemas with types and attributes you may not want. If you are importing a custom schema from cmdb-kit or another source, choose "Empty schema" to avoid type name collisions and unwanted default data.
+**Schema template pitfalls.** Cloud offers pre-built schema templates (ITAM, People, Facilities). These create populated schemas with types and attributes you may not want. If you are importing a custom schema from CMDB-Kit or another source, choose "Empty schema" to avoid type name collisions and unwanted default data.
 
 **Standalone CMDB sources.** Some clients have a dedicated CMDB tool separate from their ITSM platform:
 
 - Device42 - Data center infrastructure management with auto-discovery. Rich API for extraction. The data model is infrastructure-focused (racks, power, network) and maps well to JSM Assets CI types, but lacks ITIL service management concepts.
 - Lansweeper - Network scanning and asset discovery. Export via API or SQL queries against the Lansweeper database. Good for populating hardware and software inventory types in Assets.
-- iTop - Open-source ITIL CMDB. Uses a class-based model similar to ServiceNow's. REST API extraction. The ITIL alignment means the data model maps more naturally to cmdb-kit schemas than most alternatives.
+- iTop - Open-source ITIL CMDB. Uses a class-based model similar to ServiceNow's. REST API extraction. The ITIL alignment means the data model maps more naturally to CMDB-Kit schemas than most alternatives.
 - Snipe-IT - IT asset management focused on hardware lifecycle (purchase, assignment, depreciation, disposal). Maps to the Asset Management and Financial branches of an enterprise CMDB schema.
 - NetBox - Network infrastructure source of truth (IP addresses, racks, circuits, devices). Maps to Network Segment, Server, and Facility types in Assets. REST API with good documentation.
 
-For standalone CMDB migrations, the ITSM platform migration and the CMDB migration are independent workstreams. The CMDB migration uses cmdb-kit's adapter pattern: extract to JSON, map to the target schema, import via the Assets API.
+For standalone CMDB migrations, the ITSM platform migration and the CMDB migration are independent workstreams. The CMDB migration uses CMDB-Kit's adapter pattern: extract to JSON, map to the target schema, import via the Assets API.
 
 
 ### Confluence and Knowledge Base Migration
@@ -501,7 +501,7 @@ Define the rollback plan before cutover. The honest answer is that most Jira mig
 
 **CMJ migrations** are more reversible because you control what gets migrated. You can delete migrated projects and re-run, but this still requires manual cleanup of shared configurations (custom fields, statuses) that were created on the target.
 
-**Assets/CMDB migrations** are the most reversible. Delete the schema on the target and re-import. cmdb-kit's idempotent import approach (skip existing records, only fill gaps) makes re-runs safe.
+**Assets/CMDB migrations** are the most reversible. Delete the schema on the target and re-import. CMDB-Kit's idempotent import approach (skip existing records, only fill gaps) makes re-runs safe.
 
 **Practical rollback criteria:**
 - More than 5% of issues have incorrect field values after import
@@ -602,7 +602,7 @@ These are not scripts in this repo. They handle the actual import.
 
 - **JCMA** for bulk DC-to-Cloud Jira migration (issues, users, groups, basic config)
 - **CMJ** (Appfire) for granular DC-to-DC and DC-to-Cloud migration (schemes, workflows, incremental)
-- **cmdb-kit** for Assets/CMDB schema design, dependency sorting (LOAD_PRIORITY), and idempotent import via JSM adapter
+- **CMDB-Kit** for Assets/CMDB schema design, dependency sorting (LOAD_PRIORITY), and idempotent import via JSM adapter
 - **Source platform APIs** (ServiceNow Table API, BMC REST API, Cherwell Business Object API, Freshservice API, Zendesk API) for non-Jira source extraction
 - **pull-docs.js** (`tools/pull-docs.js`) for pulling vendor documentation to markdown for offline reference
 

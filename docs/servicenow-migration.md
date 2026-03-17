@@ -130,7 +130,7 @@ For a migration, the typical sequence:
 
 ServiceNow's CMDB uses a class hierarchy aligned to the Common Service Data Model (CSDM). The top-level class is cmdb_ci. Below it are Hardware, Software, Service, and other category classes. Below those are specific types: Server, Network Gear, Database, Application, Business Service.
 
-When migrating from JSM Assets or a CMDB designed with cmdb-kit:
+When migrating from JSM Assets or a CMDB designed with CMDB-Kit:
 
 **CI types to CMDB classes.** Map each Assets object type to a ServiceNow CMDB class. Use OOTB classes where possible. ServiceNow ships with hundreds of CI classes covering servers, applications, databases, network devices, cloud resources, and more. Only create custom classes for types that have no OOTB match.
 
@@ -185,7 +185,7 @@ Authentication: Basic auth with username/password, or OAuth 2.0 token. The Table
 
 Pagination: Use sysparm_limit and sysparm_offset. The response includes X-Total-Count header for total record count.
 
-For CMDB extraction, query cmdb_ci with sysparm_fields that match your target Assets schema. To get records from specific CI classes, query the class table directly (e.g., cmdb_ci_server, cmdb_ci_appl). Query cmdb_rel_ci for relationships.
+For CMDB extraction, query cmdb_ci with sysparm_fields that match your target Assets schema. To get records from specific CI classes, query the class table directly (e.g., cmdb_ci_server for servers, or custom tables like u_cmdbk_product for CMDB-Kit product-delivery types). Query cmdb_rel_ci for relationships.
 
 ### Common challenges
 

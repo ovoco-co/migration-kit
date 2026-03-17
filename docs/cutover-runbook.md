@@ -109,7 +109,7 @@ node tools/validate/link-integrity.js --project KEY1,KEY2
 - Delete imported objects by type (reverse order of import)
 - Delete imported object types and attributes
 - Delete the schema if it was created for this migration
-- cmdb-kit can script this: export the object IDs during import, delete by ID list on rollback
+- CMDB-Kit can script this: export the object IDs during import, delete by ID list on rollback
 
 
 ## Communication Templates
