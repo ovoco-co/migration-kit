@@ -58,13 +58,13 @@ async function glRequest(gitlabConfig, method, urlPath, body) {
 
     const resp = await fetch(url, opts);
 
-    // Rate limiting (429)
-    if (resp.status === 429 && attempt <= MAX_RETRIES) {
+    // Rate limiting (429) or server error (5xx) - retry with backoff
+    if ((resp.status === 429 || resp.status >= 500) && attempt <= MAX_RETRIES) {
       const retryAfter = resp.headers.get('retry-after');
       const waitMs = retryAfter
         ? parseInt(retryAfter, 10) * 1000
         : INITIAL_BACKOFF_MS * Math.pow(2, attempt - 1);
-      console.error(`  Rate limited. Waiting ${waitMs}ms...`);
+      console.error(`  ${resp.status === 429 ? 'Rate limited' : `Server error ${resp.status}`}. Waiting ${waitMs}ms...`);
       await new Promise(r => setTimeout(r, waitMs));
       continue;
     }
@@ -86,12 +86,20 @@ async function glRequest(gitlabConfig, method, urlPath, body) {
  *
  * GitLab returns pagination info via Link headers and X-Total/X-Total-Pages.
  */
+const MAX_PAGES = 500;
+
 async function glPaginate(gitlabConfig, urlPath, params = {}, pageSize = 100) {
   const all = [];
   const query = new URLSearchParams({ ...params, per_page: String(pageSize) });
   let url = `${urlPath}?${query}`;
+  let pages = 0;
 
   while (url) {
+    if (++pages > MAX_PAGES) {
+      console.error(`  Pagination safety limit reached (${MAX_PAGES} pages). Stopping.`);
+      break;
+    }
+
     const { data, headers } = await glRequest(gitlabConfig, 'GET', url);
 
     if (!data) break;

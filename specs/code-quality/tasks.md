@@ -8,21 +8,21 @@
 
 ## Group 2: Shared Infrastructure
 
-- [ ] Add 5xx retry with exponential backoff to `tools/lib/client.js` `request()` function (lines 60-92), retry on 500/502/503, max 3 retries
-- [ ] Add 5xx retry with exponential backoff to `tools/gitlab/gitlab-client.js` (lines 60-81), same pattern
-- [ ] Wrap `JSON.parse(fs.readFileSync(...))` in try/catch in `tools/lib/client.js` line 37, print message pointing to `.migrationrc.json` on `SyntaxError`
-- [ ] Add cursor-based pagination support to `tools/lib/client.js` `paginate()` (lines 109-145) for Assets Cloud endpoints that use `cursor`/`pageToken`
-- [ ] Add max pages safety cap (500) to `tools/gitlab/gitlab-client.js` `glPaginate()` (lines 89-111)
-- [ ] Update all callers of `paginate()` to pass explicit `resultsKey` instead of relying on auto-detection (line 129)
-- [ ] Add credential validation in `tools/lib/client.js` `loadConfig()`: check token/email fields are non-empty before proceeding
-- [ ] Fix `tools/lib/client.js` `outputPath` (line 167) to resolve relative to config file location, not `process.cwd()`
+- [x] Add 5xx retry with exponential backoff to `tools/lib/client.js` `request()`. Done 2026-04-04.
+- [x] Add 5xx retry with exponential backoff to `tools/gitlab/gitlab-client.js`. Done 2026-04-04.
+- [x] Wrap `JSON.parse(fs.readFileSync(...))` in try/catch in `tools/lib/client.js` `loadConfig()`. Done 2026-04-04.
+- [ ] Add cursor-based pagination support to `tools/lib/client.js` `paginate()` for Assets Cloud endpoints that use `cursor`/`pageToken`
+- [x] Add max pages safety cap (500) to `tools/gitlab/gitlab-client.js` `glPaginate()`. Done 2026-04-04.
+- [ ] Update all callers of `paginate()` to pass explicit `resultsKey` instead of relying on auto-detection
+- [x] Add credential validation in `tools/lib/client.js` `loadConfig()`. Done 2026-04-04.
+- [x] Fix `tools/lib/client.js` `outputPath` to resolve relative to repo root, not `process.cwd()`. Done 2026-04-04.
 
 ## Group 3: CSV Parser Consistency
 
-- [ ] Extract the quote-aware CSV parser into a shared utility (`tools/lib/csv.js`) and have all three mappers import from it
-- [x] Replace naive `split(',')` parser in `tools/transform/field-mapper.js` with quote-aware parser. Done 2026-04-04 (commit e15fe59).
-- [x] Replace naive `split(',')` parser in `tools/transform/status-mapper.js` with quote-aware parser. Done 2026-04-04 (commit e15fe59).
-- [ ] Update `tools/transform/user-mapper.js` to import from the shared utility instead of its inline implementation
+- [x] Extract the quote-aware CSV parser into `tools/lib/csv.js`. Done 2026-04-04.
+- [x] Replace inline parser in `tools/transform/field-mapper.js` with shared import. Done 2026-04-04.
+- [x] Replace inline parser in `tools/transform/status-mapper.js` with shared import. Done 2026-04-04.
+- [x] Replace inline parser in `tools/transform/user-mapper.js` with shared import. Done 2026-04-04.
 
 ## Group 4: Error Handling and Silent Failures
 

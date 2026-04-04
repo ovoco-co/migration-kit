@@ -34,7 +34,25 @@ function loadConfig() {
     }, null, 2));
     process.exit(1);
   }
-  return JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  let raw;
+  try {
+    raw = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  } catch (err) {
+    if (err instanceof SyntaxError) {
+      console.error(`Invalid JSON in ${configPath}: ${err.message}`);
+      process.exit(1);
+    }
+    throw err;
+  }
+  // Validate credentials are present
+  if (raw.source && raw.source.auth) {
+    const auth = raw.source.auth;
+    if (!auth.token && !auth.username && !auth.email) {
+      console.error(`No credentials in ${CONFIG_FILE} source.auth. Set token, username, or email.`);
+      process.exit(1);
+    }
+  }
+  return raw;
 }
 
 function buildAuthHeader(instance) {
@@ -69,13 +87,13 @@ async function request(instance, method, urlPath, body, extraHeaders) {
 
     const resp = await fetch(url, opts);
 
-    // Rate limiting (Cloud 429)
-    if (resp.status === 429 && attempt <= MAX_RETRIES) {
+    // Rate limiting (429) or server error (5xx) - retry with backoff
+    if ((resp.status === 429 || resp.status >= 500) && attempt <= MAX_RETRIES) {
       const retryAfter = resp.headers.get('retry-after');
       const waitMs = retryAfter
         ? parseInt(retryAfter, 10) * 1000
         : INITIAL_BACKOFF_MS * Math.pow(2, attempt - 1);
-      console.error(`  Rate limited. Waiting ${waitMs}ms...`);
+      console.error(`  ${resp.status === 429 ? 'Rate limited' : `Server error ${resp.status}`}. Waiting ${waitMs}ms...`);
       await new Promise(r => setTimeout(r, waitMs));
       continue;
     }
@@ -164,7 +182,10 @@ function del(instance, urlPath) {
  * Ensure the output directory exists and return the full path for a filename.
  */
 function outputPath(config, ...segments) {
-  const dir = path.resolve(config.outputDir || './output', ...segments.slice(0, -1));
+  const base = config.outputDir || './output';
+  // Resolve relative to repo root (where .migrationrc.json lives), not cwd
+  const repoRoot = path.resolve(__dirname, '..', '..');
+  const dir = path.resolve(repoRoot, base, ...segments.slice(0, -1));
   fs.mkdirSync(dir, { recursive: true });
   return path.join(dir, segments[segments.length - 1]);
 }
