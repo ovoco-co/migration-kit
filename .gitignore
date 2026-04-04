@@ -5,3 +5,8 @@ node_modules/
 src/reference/
 output/
 .migrationrc.json
+
+# Claude Code (local/personal only)
+.claude/settings.local.json
+.claude/CLAUDE.local.md
+.claude/keybindings.json

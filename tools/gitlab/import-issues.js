@@ -218,9 +218,31 @@ async function main() {
     mapping: {},  // jiraKey -> gitlabIssueIid
   };
 
+  // Check for previously imported issues to enable safe re-runs
+  console.log('Checking for previously imported issues...');
+  const existingIssues = await glPaginate(
+    glConfig,
+    `/api/v4/projects/${projectId}/issues?per_page=100&state=all`
+  );
+  const importedKeys = new Set();
+  for (const gi of existingIssues) {
+    if (!gi.description) continue;
+    const match = gi.description.match(/Migrated from Jira ([A-Z][A-Z0-9]+-\d+)/);
+    if (match) importedKeys.add(match[1]);
+  }
+  if (importedKeys.size > 0) {
+    console.log(`Found ${importedKeys.size} previously imported issues, will skip duplicates`);
+  }
+
   for (let i = 0; i < issues.length; i++) {
     const issue = issues[i];
     process.stdout.write(`  [${i + 1}/${issues.length}] ${issue.jiraKey}...`);
+
+    if (importedKeys.has(issue.jiraKey)) {
+      results.mapping[issue.jiraKey] = '(skipped-existing)';
+      console.log(' SKIP (already imported)');
+      continue;
+    }
 
     if (dryRun) {
       results.mapping[issue.jiraKey] = `(dry-run)`;

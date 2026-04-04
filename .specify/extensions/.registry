@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "extensions": {
+    "cleanup": {
+      "version": "1.0.0",
+      "source": "local",
+      "manifest_hash": "sha256:e3818366ad01173fd7caaab72c463a6d5c178758bf6d576c8b4eeb9d7279bbc3",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "claude": [
+          "speckit.cleanup.run",
+          "speckit.cleanup.check"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-04-04T16:52:15.132456+00:00"
+    }
+  }
+}

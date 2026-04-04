@@ -34,7 +34,16 @@ function parseCSV(text) {
   const headers = lines[0].split(',').map(h => h.trim());
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim());
+    // Handle commas in quoted fields
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+    for (const ch of lines[i]) {
+      if (ch === '"') { inQuotes = !inQuotes; continue; }
+      if (ch === ',' && !inQuotes) { values.push(current.trim()); current = ''; continue; }
+      current += ch;
+    }
+    values.push(current.trim());
     if (values.length < headers.length) continue;
     const row = {};
     for (let j = 0; j < headers.length; j++) {
