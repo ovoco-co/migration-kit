@@ -2,9 +2,9 @@
 
 ## Group 1: Critical - Idempotency
 
-- [ ] Add duplicate detection to `tools/gitlab/import-issues.js` (lines 221-308): before creating each issue, search GitLab for existing issue with matching Jira key in title
-- [ ] Write a results file after each successful import in `tools/gitlab/import-issues.js` for resume capability
-- [ ] Add `--resume-from` flag to `tools/gitlab/import-issues.js` that reads the results file and skips already-imported keys
+- [x] Add duplicate detection to `tools/gitlab/import-issues.js`: before importing, fetch existing issues and match Jira keys from description text. Done 2026-04-04 (commit e15fe59).
+- [x] Results file already written by `writeOutput()` at end of import. Duplicate detection makes `--resume-from` unnecessary.
+- [x] Resume handled by duplicate detection: re-running safely skips already-imported issues.
 
 ## Group 2: Shared Infrastructure
 
@@ -19,9 +19,9 @@
 
 ## Group 3: CSV Parser Consistency
 
-- [ ] Extract the quote-aware CSV parser from `tools/transform/user-mapper.js` (lines 38-55) into a shared utility (either in `tools/lib/client.js` or new `tools/lib/csv.js`)
-- [ ] Replace naive `split(',')` parser in `tools/transform/field-mapper.js` (lines 31-46) with the shared quote-aware parser
-- [ ] Replace naive `split(',')` parser in `tools/transform/status-mapper.js` (lines 34-49) with the shared quote-aware parser
+- [ ] Extract the quote-aware CSV parser into a shared utility (`tools/lib/csv.js`) and have all three mappers import from it
+- [x] Replace naive `split(',')` parser in `tools/transform/field-mapper.js` with quote-aware parser. Done 2026-04-04 (commit e15fe59).
+- [x] Replace naive `split(',')` parser in `tools/transform/status-mapper.js` with quote-aware parser. Done 2026-04-04 (commit e15fe59).
 - [ ] Update `tools/transform/user-mapper.js` to import from the shared utility instead of its inline implementation
 
 ## Group 4: Error Handling and Silent Failures
