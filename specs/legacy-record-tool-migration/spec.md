@@ -121,6 +121,7 @@ Records validate against the target schema before entering it.
 - **FR-014**: Unresolved references and identifier collisions MUST be retained and reported.
 - **FR-015**: Deliberate exclusions MUST be recorded with rationale.
 - **FR-016**: Migration MUST NOT proceed for a record family whose target domain does not yet exist.
+- **FR-017**: Where a record family has been deliberately retired rather than given a target domain, its history MUST be able to load into the reporting store as historical evidence rather than into the record store. The absence of a record type is a decision, not a blocker, and the audit trail those records hold is still real. Such a load MUST be reconciled the same way as any other.
 
 ### Key Entities
 
@@ -143,7 +144,7 @@ Records validate against the target schema before entering it.
 ## Assumptions
 
 - The target schema is validated by the shared validator before load.
-- Target domains for the record families being migrated already exist.
+- Every record family in scope has either a target domain that already exists or a recorded decision that its history loads into the reporting store instead.
 - The legacy tool can be read, by export or by direct query.
 
 ## Out of scope
