@@ -40,7 +40,17 @@ Retiring a record type is a decision about future work. It is not a decision to 
 
 ## Writing Standards
 
-These rules apply to every document in this repository, including specs and commit messages.
+These rules apply to every document in this repository, including commit messages.
+
+### Specs Are Exempt From the Formatting Rules
+
+Specifications under `specs/` follow the Naming, Attribution, Unknowns, and Scope Statements rules and are exempt from Headings, Sentences, Length, and Mechanics.
+
+Those four are about what a claim says and how well it is grounded. They matter more in a spec than anywhere else, because a spec is what everything downstream is built against.
+
+The formatting rules are exempt because the tooling writes most of the structure. `**Feature Branch**`, `**Why this priority**`, `**Independent Test**`, `**Acceptance Scenarios**`, the `**Given**` and `**When**` and `**Then**` markers, and the horizontal rules between user stories all come from `.specify/templates/spec-template.md`. Enforcing against them would mean every new spec violates this constitution the moment `speckit-specify` finishes, and reformatting would fight the tooling on the next run.
+
+The exemption is for specs, not for everything a spec touches. Plans, research notes, working documents, and commit messages follow every rule.
 
 ### Naming
 
