@@ -149,7 +149,7 @@ One idea per heading. No combined categories. Any heading joining two nouns with
 - No tables of contents.
 - No bold inside table cells.
 - Use "section" rather than "chapter".
-- Never hardcode counts in prose without dating them.
+- Write a count only when it is the evidence for the claim, and date it. "412 of 415 records reconciled" is evidence. "Four extract scripts and three transforms" is decoration, and the sentence is better without it.
 - Title case for headings.
 - Acronyms stay capitalized. ETL, CSV, API, JSON.
 - US spelling.
