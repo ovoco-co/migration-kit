@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+Read `.specify/memory/constitution.md` before doing anything in this repository. It governs how claims are established, how documents are written, and what a migration has to prove. This file is a pointer to it, not a replacement.
+
 ## Project Overview
 
 migration-kit is an ITSM migration toolkit covering Jira DC to Cloud, Jira to GitLab, Ivanti to JSM, and JSM to JSM migrations. It provides documentation, scripts, templates, and reference material for the full migration lifecycle.
@@ -37,12 +39,14 @@ src/reference/                      Pulled platform docs (gitignored)
 
 ## Documentation Formatting Rules
 
-- No em dashes (use hyphen or comma instead)
-- No ampersands as "and" (proper acronyms are fine)
-- No horizontal rules
-- No numbered sections, just use header levels
-- No tables of contents
-- No bold in table cells
+The full rules are in the constitution's Writing Standards section. The ones broken most often:
+
+- State whether a claim was read or run. A claim about how a platform behaves is a conclusion until something has been run against that platform.
+- Name the source platform, the target platform, and the record family every time. "The migration" is ambiguous the moment a second adapter exists.
+- A correction is finished when every document repeating the old claim has been found, not when the finding is recorded.
+- One clause per sentence by default. No em dashes, split the sentence instead.
+- No run-in bold headers. A bold phrase opening a paragraph is not a heading.
+- No ampersands as "and", no horizontal rules, no numbered sections, no tables of contents, no bold in table cells.
 
 ## Git Workflow
 
